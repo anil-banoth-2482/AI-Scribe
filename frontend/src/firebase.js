@@ -1,6 +1,6 @@
 // ── Firebase configuration ────────────────────────────────
 // Replace the values below with your own Firebase project config.
-// Go to: https://console.firebase.google.com → your project → ⚙️ Settings → General → Your apps
+// Go to: https://console.firebase.google.com -> your project -> Settings -> General -> Your apps
 import { initializeApp } from "firebase/app";
 import {
   getAuth,

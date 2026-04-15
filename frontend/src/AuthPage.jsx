@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import {
   auth,
   googleProvider,
@@ -24,122 +24,7 @@ function GoogleIcon() {
 
 /* ── Mouse-repelling particle field for auth background ── */
 function AuthParticleField() {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    let animId;
-    const mouse = { x: -9999, y: -9999 };
-    let particles = [];
-
-    const COLS = 18;
-    const ROWS = 12;
-    const REPEL_RADIUS = 140;
-    const REPEL_FORCE  = 9;
-    const SPRING       = 0.055;
-    const DAMPING      = 0.72;
-    const CONNECT_DIST = 100;
-
-    const resize = () => {
-      canvas.width  = window.innerWidth;
-      canvas.height = window.innerHeight;
-      particles = [];
-      const sx = canvas.width  / COLS;
-      const sy = canvas.height / ROWS;
-      for (let r = 0; r <= ROWS; r++) {
-        for (let c = 0; c <= COLS; c++) {
-          const hx = sx * c + (Math.random() - 0.5) * sx * 0.25;
-          const hy = sy * r + (Math.random() - 0.5) * sy * 0.25;
-          particles.push({
-            homeX: hx, homeY: hy,
-            x: hx, y: hy,
-            vx: 0, vy: 0,
-            r: Math.random() * 1.4 + 0.6,
-          });
-        }
-      }
-    };
-
-    const onMove  = (e) => { mouse.x = e.clientX; mouse.y = e.clientY; };
-    const onLeave = ()  => { mouse.x = -9999; mouse.y = -9999; };
-
-    const tick = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (const p of particles) {
-        const dx = p.x - mouse.x;
-        const dy = p.y - mouse.y;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        if (dist < REPEL_RADIUS) {
-          const force = Math.pow((REPEL_RADIUS - dist) / REPEL_RADIUS, 2) * REPEL_FORCE;
-          p.vx += (dx / dist) * force;
-          p.vy += (dy / dist) * force;
-        }
-        p.vx += (p.homeX - p.x) * SPRING;
-        p.vy += (p.homeY - p.y) * SPRING;
-        p.vx *= DAMPING;
-        p.vy *= DAMPING;
-        p.x  += p.vx;
-        p.y  += p.vy;
-      }
-
-      // Connections
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i], b = particles[j];
-          const d = Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-          if (d < CONNECT_DIST) {
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = `rgba(56,189,248,${(1 - d / CONNECT_DIST) * 0.13})`;
-            ctx.lineWidth = 0.7;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Dots
-      for (const p of particles) {
-        const speed = Math.sqrt(p.vx ** 2 + p.vy ** 2);
-        const hue   = 195 + speed * 4;
-        const lit   = 60  + speed * 5;
-        const alpha = Math.min(0.18 + speed * 0.04, 0.85);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r + speed * 0.12, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${hue},100%,${lit}%,${alpha})`;
-        ctx.fill();
-      }
-
-      animId = requestAnimationFrame(tick);
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseleave', onLeave);
-    window.addEventListener('resize', resize);
-    resize();
-    tick();
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseleave', onLeave);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'fixed', top: 0, left: 0,
-        width: '100vw', height: '100vh',
-        pointerEvents: 'none',
-        zIndex: 0,
-      }}
-    />
-  );
+  return null;
 }
 
 export default function AuthPage() {
@@ -172,7 +57,7 @@ export default function AuthPage() {
       "auth/operation-not-allowed":        "This sign-in method is not enabled in Firebase console.",
       "auth/configuration-not-found":      "Firebase auth is not configured correctly.",
       "auth/admin-restricted-operation":   "This sign-in method is not enabled. Enable Email/Password in Firebase console.",
-      "auth/unauthorized-domain":          "This domain is not authorised. Add localhost to Firebase → Authentication → Settings → Authorised domains.",
+      "auth/unauthorized-domain":          "This domain is not authorised. Add localhost to Firebase -> Authentication -> Settings -> Authorised domains.",
       "auth/cancelled-popup-request":      "Sign-in cancelled.",
       "auth/popup-blocked":                "Popup was blocked by your browser. Please allow popups for this site.",
       "auth/redirect-cancelled-by-user":   "Google sign-in was cancelled.",
@@ -247,18 +132,16 @@ export default function AuthPage() {
         <div className="auth-bg-orb auth-orb3" />
         <div className="auth-card">
           <div className="auth-logo">
-            <span className="auth-logo-icon">🎯</span>
             <span className="auth-logo-text">Meet<span className="auth-accent">AI</span> Scribe</span>
           </div>
           <div className="auth-reset-sent">
-            <div className="auth-reset-icon">📬</div>
             <h2 className="auth-reset-title">Check your inbox</h2>
             <p className="auth-reset-body">
               We've sent a password reset link to <strong>{email}</strong>.
               Check your spam folder if you don't see it.
             </p>
             <button className="auth-btn auth-btn-ghost" onClick={() => { setResetSent(false); setMode("login"); }}>
-              ← Back to login
+              Back to login
             </button>
           </div>
         </div>
@@ -276,7 +159,6 @@ export default function AuthPage() {
       <div className="auth-card">
         {/* Logo */}
         <div className="auth-logo">
-          <span className="auth-logo-icon">🎯</span>
           <span className="auth-logo-text">Meet<span className="auth-accent">AI</span> Scribe</span>
         </div>
 
@@ -348,20 +230,7 @@ export default function AuthPage() {
                   className="auth-pw-toggle"
                   onClick={() => setShowPw(!showPw)}
                 >
-                  {showPw ? (
-                    /* Eye-off (hide) icon */
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Hide password">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                      <line x1="1" y1="1" x2="23" y2="23"/>
-                    </svg>
-                  ) : (
-                    /* Eye (show) icon */
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Show password">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                  )}
+                  {showPw ? "Hide" : "Show"}
                 </button>
               )}
             </div>
@@ -391,7 +260,7 @@ export default function AuthPage() {
               className="auth-link"
               onClick={() => setMode("login")}
             >
-              ← Back to sign in
+              Back to sign in
             </button>
           )}
           {mode !== "reset" && (

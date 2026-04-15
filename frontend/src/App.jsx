@@ -3,123 +3,7 @@ import "./app.css";
 
 // ── Mouse-repelling particle field ────────────────────────
 function ParticleField() {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    let animId;
-    const mouse = { x: -9999, y: -9999 };
-    let particles = [];
-
-    const COLS = 18;
-    const ROWS = 11;
-    const REPEL_RADIUS = 140;
-    const REPEL_FORCE  = 9;
-    const SPRING       = 0.055;
-    const DAMPING      = 0.72;
-    const CONNECT_DIST = 105;
-
-    const resize = () => {
-      canvas.width  = window.innerWidth;
-      canvas.height = window.innerHeight;
-      particles = [];
-      const sx = canvas.width  / COLS;
-      const sy = canvas.height / ROWS;
-      for (let r = 0; r <= ROWS; r++) {
-        for (let c = 0; c <= COLS; c++) {
-          const hx = sx * c + (Math.random() - 0.5) * sx * 0.25;
-          const hy = sy * r + (Math.random() - 0.5) * sy * 0.25;
-          particles.push({
-            homeX: hx, homeY: hy,
-            x: hx, y: hy,
-            vx: 0, vy: 0,
-            r: Math.random() * 1.4 + 0.6,
-          });
-        }
-      }
-    };
-
-    const onMove  = (e) => { mouse.x = e.clientX; mouse.y = e.clientY; };
-    const onLeave = ()  => { mouse.x = -9999; mouse.y = -9999; };
-
-    const tick = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Physics
-      for (const p of particles) {
-        const dx = p.x - mouse.x;
-        const dy = p.y - mouse.y;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        if (dist < REPEL_RADIUS) {
-          const force = Math.pow((REPEL_RADIUS - dist) / REPEL_RADIUS, 2) * REPEL_FORCE;
-          p.vx += (dx / dist) * force;
-          p.vy += (dy / dist) * force;
-        }
-        p.vx += (p.homeX - p.x) * SPRING;
-        p.vy += (p.homeY - p.y) * SPRING;
-        p.vx *= DAMPING;
-        p.vy *= DAMPING;
-        p.x  += p.vx;
-        p.y  += p.vy;
-      }
-
-      // Connections
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i], b = particles[j];
-          const d = Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-          if (d < CONNECT_DIST) {
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = `rgba(56,189,248,${(1 - d / CONNECT_DIST) * 0.13})`;
-            ctx.lineWidth = 0.7;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Dots
-      for (const p of particles) {
-        const speed = Math.sqrt(p.vx ** 2 + p.vy ** 2);
-        const hue   = 195 + speed * 4;
-        const lit   = 60  + speed * 5;
-        const alpha = Math.min(0.18 + speed * 0.04, 0.85);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r + speed * 0.12, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${hue},100%,${lit}%,${alpha})`;
-        ctx.fill();
-      }
-
-      animId = requestAnimationFrame(tick);
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseleave', onLeave);
-    window.addEventListener('resize', resize);
-    resize();
-    tick();
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseleave', onLeave);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'fixed', top: 0, left: 0,
-        width: '100vw', height: '100vh',
-        pointerEvents: 'none',
-        zIndex: 0,
-      }}
-    />
-  );
+  return null;
 }
 
 // ── Inline markdown parser ────────────────────────────────
@@ -178,7 +62,7 @@ function formatTs(ts) {
 // ── SummaryCard ───────────────────────────────────────────
 // Defined at module scope so React can track its identity across renders
 // (defining it inside App would cause remount + hook reset on every render)
-function SummaryCard({ sum, ts, icon = "✨", title = "Meeting Summary", s3Key, onRename }) {
+function SummaryCard({ sum, ts, title = "Meeting Summary", s3Key, onRename }) {
   const [editing, setEditing] = useState(false);
   const [draft,   setDraft]   = useState(title);
   const [saving,  setSaving]  = useState(false);
@@ -201,7 +85,6 @@ function SummaryCard({ sum, ts, icon = "✨", title = "Meeting Summary", s3Key, 
   return (
     <div className="card summary-card">
       <div className="result-header">
-        <span className="result-icon">{icon}</span>
         {editing ? (
           <div className="title-edit-row">
             <input
@@ -213,9 +96,9 @@ function SummaryCard({ sum, ts, icon = "✨", title = "Meeting Summary", s3Key, 
               maxLength={80}
             />
             <button className="title-edit-btn confirm" onClick={save} disabled={saving} title="Save">
-              {saving ? '…' : '✓'}
+              {saving ? 'Saving' : 'Save'}
             </button>
-            <button className="title-edit-btn cancel" onClick={cancel} title="Cancel">✕</button>
+            <button className="title-edit-btn cancel" onClick={cancel} title="Cancel">Cancel</button>
           </div>
         ) : (
           <div className="title-display-row">
@@ -226,7 +109,7 @@ function SummaryCard({ sum, ts, icon = "✨", title = "Meeting Summary", s3Key, 
                 onClick={() => { setDraft(title); setEditing(true); }}
                 title="Rename this meeting"
               >
-                ✏️
+                Rename
               </button>
             )}
           </div>
@@ -237,12 +120,12 @@ function SummaryCard({ sum, ts, icon = "✨", title = "Meeting Summary", s3Key, 
           onClick={(e) => {
             navigator.clipboard.writeText(sum);
             const b = e.currentTarget;
-            b.textContent = '✓ Copied!';
-            setTimeout(() => { b.textContent = '📋 Copy'; }, 1800);
+            b.textContent = 'Copied';
+            setTimeout(() => { b.textContent = 'Copy'; }, 1800);
           }}
           title="Copy to clipboard"
         >
-          📋 Copy
+          Copy
         </button>
       </div>
       <div className="summary-body">
@@ -260,7 +143,7 @@ function preprocessSummary(raw) {
     const t = line.trim();
     if (!t) { out.push(''); continue; }
 
-    // ── 1. Table separator rows:  |---|---|  → skip entirely
+    // ── 1. Table separator rows:  |---|---|  -> skip entirely
     if (/^\|\s*[-:|]+(\s*\|\s*[-:|]+)+\s*\|?\s*$/.test(t)) continue;
 
     // ── 2. Table data row: starts with | and has ≥2 pipe chars
@@ -283,7 +166,7 @@ function preprocessSummary(raw) {
       continue;
     }
 
-    // ── 3. Continuation line: table cell content after <br>→newline split
+    // ── 3. Continuation line: table cell content after <br>->newline split
     //       These start with a bullet or digit and end with a stray |
     if (t.endsWith('|') && !t.startsWith('|')) {
       const p = t.slice(0, -1).trim(); // strip trailing |
@@ -327,11 +210,11 @@ function preprocessSummary(raw) {
 
 
 const STEPS = [
-  { id: "joining",      label: "Joining Meeting", icon: "🤖" },
-  { id: "recording",    label: "Recording", icon: "🎙"  },
-  { id: "processing",   label: "Processing Audio",icon: "⚙️"  },
-  { id: "transcribing", label: "Transcribing ", icon: "🔊"  },
-  { id: "summarizing",  label: "Summarizing ", icon: "✨"  },
+  { id: "joining",      label: "Joining meeting" },
+  { id: "recording",    label: "Recording" },
+  { id: "processing",   label: "Processing audio" },
+  { id: "transcribing", label: "Transcribing" },
+  { id: "summarizing",  label: "Summarizing" },
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
@@ -518,9 +401,9 @@ export default function App({ user, onSignOut }) {
       return;
     }
     try {
-      setStatusMessages(prev => [...prev, { type: "info", text: "🛑 Asking bot to leave the meeting…", ts: Date.now() }]);
+      setStatusMessages(prev => [...prev, { type: "info", text: "Asking bot to leave the meeting…", ts: Date.now() }]);
       await fetch(`${API_BASE}/bot/${encodeURIComponent(botId)}/leave`, { method: "POST" });
-      setStatusMessages(prev => [...prev, { type: "info", text: "⏳ Bot is leaving. Waiting for recording upload…", ts: Date.now() }]);
+      setStatusMessages(prev => [...prev, { type: "info", text: "Bot is leaving. Waiting for recording upload…", ts: Date.now() }]);
     } catch {
       setStatusMessages(prev => [...prev, { type: "error", text: "Failed to ask bot to leave. Check backend logs.", ts: Date.now() }]);
     }
@@ -566,8 +449,8 @@ export default function App({ user, onSignOut }) {
   const TranscriptCard = ({ text, show, setShow }) => (
     <div className="card transcript-card">
       <button className="transcript-toggle" onClick={() => setShow(v => !v)}>
-        <span>🔊 Raw Transcript</span>
-        <span className="chevron">{show ? "▲" : "▼"}</span>
+        <span>Raw transcript</span>
+        <span className="chevron">{show ? "Hide" : "Show"}</span>
       </button>
       {show && <div className="transcript-body"><pre>{text}</pre></div>}
     </div>
@@ -587,7 +470,6 @@ export default function App({ user, onSignOut }) {
           title="Expand history"
           aria-label="Expand sidebar"
         >
-          <span className="expand-tab-icon">▶</span>
           <span className="expand-tab-label">History</span>
         </button>
       )}
@@ -603,7 +485,7 @@ export default function App({ user, onSignOut }) {
               title="Refresh"
               aria-label="Refresh history"
             >
-              ↻
+              Refresh
             </button>
             <button
               className="sidebar-collapse-btn"
@@ -611,7 +493,7 @@ export default function App({ user, onSignOut }) {
               title="Collapse sidebar"
               aria-label="Collapse sidebar"
             >
-              ◀
+              Collapse
             </button>
           </div>
         </div>
@@ -631,7 +513,7 @@ export default function App({ user, onSignOut }) {
             title="Sign out"
             aria-label="Sign out"
           >
-            ⎋
+            Sign out
           </button>
         </div>
 
@@ -645,7 +527,6 @@ export default function App({ user, onSignOut }) {
 
           {!histLoading && histories.length === 0 && (
             <div className="sidebar-empty">
-              <div className="sidebar-empty-icon">🗂</div>
               <p>{histError ? "History not available." : "No past summaries yet."}</p>
               <p>{histError || "Complete a meeting to see it here."}</p>
             </div>
@@ -673,7 +554,7 @@ export default function App({ user, onSignOut }) {
             className="btn-primary sidebar-new-btn"
             onClick={() => { closeHistory(); reset(); setSidebarOpen(false); }}
           >
-            <span>＋ New Meeting</span>
+            <span>New meeting</span>
           </button>
         </div>
       </aside>
@@ -690,7 +571,7 @@ export default function App({ user, onSignOut }) {
           onClick={() => setSidebarOpen(v => !v)}
           aria-label="Toggle history sidebar"
         >
-          📋
+          History
         </button>
 
         <div className="container">
@@ -711,7 +592,7 @@ export default function App({ user, onSignOut }) {
           {showingHistory && (
             <div className="results">
               <button className="btn-ghost back-btn" onClick={closeHistory}>
-                ← Back to new meeting
+                Back to new meeting
               </button>
 
               {histItemLoading && (
@@ -723,7 +604,6 @@ export default function App({ user, onSignOut }) {
 
               {historyItem?.error && (
                 <div className="card error-card">
-                  <div className="error-icon">⚠️</div>
                   <h2 className="error-title">Failed to load</h2>
                   <p className="error-msg">{historyItem.error}</p>
                 </div>
@@ -733,7 +613,6 @@ export default function App({ user, onSignOut }) {
                 <SummaryCard
                   sum={historyItem.summary}
                   ts={historyItem.timestamp}
-                  icon="📋"
                   title={historyItem.meetingTitle || "Past Meeting Summary"}
                   s3Key={historyItem.key}
                   onRename={renameTitle}
@@ -781,8 +660,7 @@ export default function App({ user, onSignOut }) {
                       onKeyDown={(e) => e.key === "Enter" && startBot()}
                     />
                     <button className="btn-primary" onClick={startBot}>
-                      <span>Launch Bot</span>
-                      <span className="btn-arrow">→</span>
+                      <span>Launch bot</span>
                     </button>
                   </div>
 
@@ -804,7 +682,7 @@ export default function App({ user, onSignOut }) {
                       const active = stepIndex === i;
                       return (
                         <div key={step.id} className={`pipe-step ${done ? "done" : ""} ${active ? "active" : ""}`}>
-                          <div className="pipe-icon">{done ? "✓" : step.icon}</div>
+                          <div className="pipe-icon">{i + 1}</div>
                           <div className="pipe-info">
                             <span className="pipe-label">{step.label}</span>
                             {active && <span className="pipe-badge">In progress…</span>}
@@ -834,7 +712,6 @@ export default function App({ user, onSignOut }) {
 
               {phase === "error" && (
                 <div className="card error-card">
-                  <div className="error-icon">⚠️</div>
                   <h2 className="error-title">Something went wrong</h2>
                   <p className="error-msg">{errorMsg}</p>
                   <button className="btn-primary" onClick={reset}>Try Again</button>
@@ -858,7 +735,7 @@ export default function App({ user, onSignOut }) {
                   )}
 
                   <button className="btn-primary centered" onClick={reset}>
-                    ← Start Another Meeting
+                    Start another meeting
                   </button>
                 </div>
               )}

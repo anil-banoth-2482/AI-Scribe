@@ -101,19 +101,19 @@ TERMINAL_FAIL = {"fatal", "error", "recording_permission_denied", "bot_kicked", 
 
 def map_status(status: str) -> dict:
     mapping = {
-        "ready":                      ("joining",    "🤖 Bot is ready — attempting to join the call…"),
-        "joining_call":               ("joining",    "🔗 Bot is joining the meeting…"),
-        "in_waiting_room":            ("joining",    "⏳ Bot is in the waiting room — please admit it!"),
-        "in_call_not_recording":      ("recording",  "📞 Bot joined the call — starting recording…"),
-        "recording_permission_allowed": ("recording","✅ Recording permission granted!"),
-        "recording_permission_denied":  ("recording","❌ Recording permission denied by host."),
-        "in_call_recording":          ("recording",  "🔴 Bot is actively recording the meeting…"),
-        "recording_done":             ("processing", "💾 Recording finished — processing audio…"),
-        "call_ended":                 ("processing", "📵 Call ended — waiting for recording upload…"),
-        "done":                       ("processing", "✅ Recall processing complete. Fetching audio…"),
-        "analysis_done":              ("processing", "🔍 Analysis done. Fetching audio…"),
+        "ready":                        ("joining",    "Bot is ready. Attempting to join the call..."),
+        "joining_call":                 ("joining",    "Bot is joining the meeting..."),
+        "in_waiting_room":              ("joining",    "Bot is in the waiting room. Please admit it."),
+        "in_call_not_recording":        ("recording",  "Bot joined the call. Starting recording..."),
+        "recording_permission_allowed": ("recording",  "Recording permission granted."),
+        "recording_permission_denied":  ("recording",  "Recording permission denied by host."),
+        "in_call_recording":            ("recording",  "Recording in progress..."),
+        "recording_done":               ("processing", "Recording finished. Processing audio..."),
+        "call_ended":                   ("processing", "Call ended. Waiting for recording upload..."),
+        "done":                         ("processing", "Recall processing complete. Fetching audio..."),
+        "analysis_done":                ("processing", "Analysis done. Fetching audio..."),
     }
-    step, msg = mapping.get(status, ("joining", f"ℹ️ Bot status: {status}"))
+    step, msg = mapping.get(status, ("joining", f"Bot status: {status}"))
     return {"step": step, "msg": msg}
 
 # ── SSE helper ───────────────────────────────────────────
@@ -613,14 +613,14 @@ async def start(
         return StreamingResponse(error_stream(), media_type="text/event-stream")
 
     async def event_stream():
-        yield sse("status", {"step": "joining", "message": "🤖 Creating Recall.ai bot…"})
+        yield sse("status", {"step": "joining", "message": "Creating Recall.ai bot..."})
 
         # Step 1: Create bot
         try:
             bot = await create_bot(meet_link, username)
             bot_id = bot["id"]
             yield sse("bot", {"id": bot_id})
-            yield sse("status", {"step": "joining", "message": f"✅ Bot created (ID: {bot_id}) — joining meeting now…"})
+            yield sse("status", {"step": "joining", "message": f"Bot created (ID: {bot_id}). Joining meeting now..."})
         except Exception as e:
             yield sse("error", {"message": f"Failed to create bot: {str(e)}"})
             return
@@ -637,7 +637,7 @@ async def start(
             try:
                 data = await get_bot(bot_id)
             except Exception as e:
-                yield sse("status", {"step": "joining", "message": f"⚠️ Poll failed: {e} — retrying…"})
+                yield sse("status", {"step": "joining", "message": f"Poll failed: {e}. Retrying..."})
                 continue
 
             if i == 0:
@@ -669,14 +669,14 @@ async def start(
             if recall_status in TERMINAL_OK or (
                 isinstance(data.get("status"), str) and data["status"] in ("call_ended", "done")
             ):
-                yield sse("status", {"step": "processing", "message": "🎙 Meeting ended — waiting for recording upload…"})
+                yield sse("status", {"step": "processing", "message": "Meeting ended. Waiting for recording upload..."})
                 for attempt in range(RECORDING_POLL_MAX_ATTEMPTS):
                     await asyncio.sleep(RECORDING_POLL_INTERVAL_SEC)
                     yield sse(
                         "status",
                         {
                             "step": "processing",
-                            "message": f"⏳ Waiting for recording… (attempt {attempt + 1}/{RECORDING_POLL_MAX_ATTEMPTS})",
+                            "message": f"Waiting for recording... (attempt {attempt + 1}/{RECORDING_POLL_MAX_ATTEMPTS})",
                         },
                     )
 
@@ -709,12 +709,12 @@ async def start(
                                 except Exception as e:
                                     print(f"[participant_events] download failed: {e}")
                         if recording_url:
-                            print(f"[recording poll {attempt+1}] ✅ Got URL: {recording_url[:80]}…")
+                            print(f"[recording poll {attempt+1}] Got URL: {recording_url[:80]}…")
                             break
                         else:
-                            print(f"[recording poll {attempt+1}] ⚠️ Recording found but no download_url yet")
+                            print(f"[recording poll {attempt+1}] Recording found but no download_url yet")
                     else:
-                        print(f"[recording poll {attempt+1}] ⚠️ No recordings in response yet")
+                        print(f"[recording poll {attempt+1}] No recordings in response yet")
 
                 break  # exit main status-polling loop
 
@@ -723,17 +723,17 @@ async def start(
             return
 
         # Step 3: Transcribe (Whisper)
-        yield sse("status", {"step": "transcribing", "message": "🔊 Audio found. Converting & sending to Whisper…"})
+        yield sse("status", {"step": "transcribing", "message": "Audio found. Preparing and sending for transcription..."})
         try:
             transcript = await transcribe(recording_url)
-            yield sse("status", {"step": "transcribing", "message": f"✅ Transcript ready ({len(transcript)} chars)…"})
+            yield sse("status", {"step": "transcribing", "message": f"Transcript ready ({len(transcript)} chars)."})
             yield sse("transcript", {"text": transcript})
         except Exception as e:
             yield sse("error", {"message": f"Transcription failed: {e}"})
             return
 
         # Step 4: Summarize
-        yield sse("status", {"step": "summarizing", "message": "✨ Summarizing …"})
+        yield sse("status", {"step": "summarizing", "message": "Summarizing..."})
         try:
             extra = ""
             if chat_messages:
