@@ -357,6 +357,7 @@ export default function App({ user, onSignOut }) {
   // ── History sidebar ───────────────────────────────────────
   const [histories, setHistories]           = useState([]);
   const [histLoading, setHistLoading]       = useState(false);
+  const [histError, setHistError]           = useState("");
   const [activeKey, setActiveKey]           = useState(null);
   const [historyItem, setHistoryItem]       = useState(null); // { summary, transcript, timestamp }
   const [histItemLoading, setHistItemLoading] = useState(false);
@@ -383,9 +384,12 @@ export default function App({ user, onSignOut }) {
     setHistLoading(true);
     try {
       const uid  = getUserId();
-      if (!uid) { setHistories([]); setHistLoading(false); return; }
+      if (!uid) { setHistories([]); setHistError(""); setHistLoading(false); return; }
       const res  = await fetch(`${API_BASE}/summaries?uid=${encodeURIComponent(uid)}`);
       const json = await res.json();
+      if (json?.error) setHistError(String(json.error));
+      else if (json?.storageEnabled === false) setHistError("History storage is disabled on the backend.");
+      else setHistError("");
       // Merge: server now returns meetingTitle from S3 metadata.
       // For optimistically-inserted items (not yet in S3), prefer the in-memory title.
       setHistories(prev => {
@@ -399,6 +403,7 @@ export default function App({ user, onSignOut }) {
       });
     } catch {
       setHistories([]);
+      setHistError("Failed to load history. Check the backend logs.");
     } finally {
       setHistLoading(false);
     }
@@ -641,8 +646,8 @@ export default function App({ user, onSignOut }) {
           {!histLoading && histories.length === 0 && (
             <div className="sidebar-empty">
               <div className="sidebar-empty-icon">🗂</div>
-              <p>No past summaries yet.</p>
-              <p>Complete a meeting to see it here.</p>
+              <p>{histError ? "History not available." : "No past summaries yet."}</p>
+              <p>{histError || "Complete a meeting to see it here."}</p>
             </div>
           )}
 

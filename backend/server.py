@@ -6,6 +6,7 @@ import httpx
 import boto3
 import tempfile
 from pathlib import Path
+from typing import Any
 from dotenv import load_dotenv
 from groq import Groq
 from fastapi import FastAPI, Query, Body
@@ -122,7 +123,7 @@ def sse(event: str, data: dict) -> str:
 # ── Recall helpers ───────────────────────────────────────
 async def create_bot(meet_link: str, username: str = "User") -> dict:
     bot_name = f"{username} AI"
-    payload = {"meeting_url": meet_link, "bot_name": bot_name}
+    payload: dict[str, Any] = {"meeting_url": meet_link, "bot_name": bot_name}
     if RECALL_TRANSCRIPTION_PROVIDER in {"rev"}:
         payload["transcription_options"] = {"provider": RECALL_TRANSCRIPTION_PROVIDER}
 
@@ -256,8 +257,10 @@ def _extract_chat_messages(participant_events: object) -> list[dict]:
         typ = (item.get("event") or item.get("type") or item.get("code") or item.get("event_type") or "").lower()
         if "chat" not in typ:
             continue
-        data = item.get("data") if isinstance(item.get("data"), dict) else {}
-        participant = item.get("participant") if isinstance(item.get("participant"), dict) else {}
+        raw_data = item.get("data")
+        data: dict = raw_data if isinstance(raw_data, dict) else {}
+        raw_participant = item.get("participant")
+        participant: dict = raw_participant if isinstance(raw_participant, dict) else {}
         text = (data.get("text") or data.get("message") or "").strip()
         if not text:
             continue
