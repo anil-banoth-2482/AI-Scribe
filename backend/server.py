@@ -61,9 +61,15 @@ if ENABLE_HISTORY_STORAGE:
                 session = boto3.Session(profile_name=AWS_PROFILE) if AWS_PROFILE else boto3.Session()
                 s3_client = session.client("s3", region_name=AWS_REGION)
 
-            # Fail fast if the bucket is unreachable or permissions are wrong.
-            s3_client.head_bucket(Bucket=AWS_BUCKET_NAME)
-            print(f"[history] S3 storage enabled for bucket={AWS_BUCKET_NAME} region={AWS_REGION}")
+            # Best-effort bucket validation.
+            # Some IAM policies allow PutObject/GetObject but deny HeadBucket/ListBucket,
+            # which would otherwise disable history storage incorrectly.
+            try:
+                s3_client.head_bucket(Bucket=AWS_BUCKET_NAME)
+                print(f"[history] S3 storage enabled for bucket={AWS_BUCKET_NAME} region={AWS_REGION}")
+            except Exception as e:
+                history_storage_error = f"Bucket check warning: {e}"
+                print(f"[history] S3 client initialized but bucket check warned: {e}")
         except Exception as e:
             history_storage_error = str(e)
             print(f"[history] Failed to initialize S3 client; history storage disabled. Error: {e}")
